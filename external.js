@@ -21,6 +21,10 @@ connection.once("open", () => {
 
 });
 
+connection.once('error', err => {
+    logger.error(`Ошибка подключения к Mongo ${util.inspect(err)}`);
+})
+
 app.use(express.json())
 app.get(
     '/update3CXPhonebook',

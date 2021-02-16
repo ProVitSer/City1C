@@ -9,17 +9,22 @@ const client = require(`ari-client`),
 
 const LOCAL_ROUTING = 'RouteToLocalUser';
 const DEFAULT_ROUTING = 'RouteToDefaultIncomingRoute';
+let channelId, dialExtension, incomingNumber, dialTrunk = [];
 
 const mongoDB = `mongodb://${config.mongo.host}:${config.mongo.port}/${config.mongo.db}`;
 const userScheme = new Schema({ _id: String, company: String, fio: String, extension: String }, { versionKey: false });
 const User = mongoose.model("phonebooks", userScheme);
-mongoose.connect(mongoDB, { useUnifiedTopology: true, useNewUrlParser: true });
+mongoose.connect(mongoDB, {
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+});
+mongoose.set('useUnifiedTopology', true);
 
 const connection = mongoose.connection;
 
 
 connection.once("open", () => {
-    console.log("MongoDB database connection established successfully");
+    logger.info("MongoDB database connection established successfully");
 });
 
 
@@ -45,10 +50,10 @@ client.connect(config.ari.host, config.ari.username, config.ari.secret,
                             logger.info(`Со стороны базы вернулся результат ${util.inspect(result)}`);
                             if (result == null) {
                                 logger.info(`Привязка не найдена ${result} вызов пошел по маршруту ${DEFAULT_ROUTING}`);
-                                continueDialplan(event.channel.id, DEFAULT_ROUTING, '414232');
+                                continueDialplan(event.channel.id, DEFAULT_ROUTING, '00018');
                             } else if (result['extension'] == '') {
                                 logger.info(`Отсутствует добавочный номер ${result['extension']}  вызов пошел по маршруту ${LOCAL_ROUTING}`);
-                                continueDialplan(event.channel.id, DEFAULT_ROUTING, '414232');
+                                continueDialplan(event.channel.id, DEFAULT_ROUTING, '00018');
                             } else {
                                 logger.info(`Был найден привязанный внутренний номер ${result['_id']}  ${result['company']}  ${result['fio']}  ${result['extension']}  вызов пошел по маршруту ${LOCAL_ROUTING}`);
                                 continueDialplan(event.channel.id, LOCAL_ROUTING, result['extension']);
@@ -58,7 +63,7 @@ client.connect(config.ari.host, config.ari.username, config.ari.secret,
                     .catch(error => {
                         logger.error(`На запрос внутреннего номера вернулась ошибка ${error}`);
                         logger.error(`Ошибка, вызов идет по ${DEFAULT_ROUTING}`);
-                        continueDialplan(event.channel.id, DEFAULT_ROUTING, '414232');
+                        continueDialplan(event.channel.id, DEFAULT_ROUTING, '00018');
                     });
             });
 
